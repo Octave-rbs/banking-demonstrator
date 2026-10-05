@@ -21,7 +21,7 @@ def render_home_view(db: BankBackend, me_id: str):
 
     my_txs = [tx for tx in db.transactions if tx.user_id == me_id]
     if not my_txs:
-        st.info("Aucune opération enregistrée. Allez dans l'onglet Admin pour charger vos données de test.")
+        st.info("Aucune opération enregistrée.")
         return
 
     # Filtre de recherche

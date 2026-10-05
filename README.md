@@ -8,7 +8,6 @@ Application bancaire mobile innovante développée avec **Streamlit**, **LangCha
 2. **Compte Partagé ("Tricount Intégré")** : Gestion multi-groupes, calcul automatisé des balances nettes, algorithme d'optimisation des flux de remboursement et **virement instantané en 1 clic** soldant les dettes.
 3. **Budgétisation & Benchmark Pairs** : Double vue (mois civil vs mois glissant 30 jours), répartition charges fixes vs dépenses variables, et comparateur statistique avec les pairs (Top 10% éco, Top 30% éco, Moyenne, Top 30% dép, Top 10% dép).
 4. **Coach Financier IA & Scorecard** : Score de santé budgétaire instantané (/100 sur 3 piliers), rapport d'audit exécutif généré en **streaming** par un LLM (`Llama-3.1-8B-Instruct`), et chat conversationnel contextualisé avec détection d'aides publiques.
-5. **Administration** : Gestion des clés API Hugging Face, réinitialisation des jeux de démo et consultation des données de référence.
 
 ## 🚀 Lancement Rapide
 

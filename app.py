@@ -11,8 +11,7 @@ from views import (
     render_home_view,
     render_shared_view,
     render_budget_view,
-    render_advisor_view,
-    render_admin_view
+    render_advisor_view
 )
 
 # 1. Configuration de la page
@@ -92,7 +91,7 @@ st.markdown("""
 # 6. Navigation principale
 menu = st.radio(
     "Navigation",
-    ["🏠 Accueil", "👥 Partagé", "📊 Budget", "🤖 Coach IA", "⚙️ Admin"],
+    ["🏠 Accueil", "👥 Partagé", "📊 Budget", "🤖 Coach IA"],
     horizontal=True,
     label_visibility="collapsed"
 )
@@ -107,5 +106,3 @@ elif menu == "📊 Budget":
     render_budget_view(db, ME_ID)
 elif menu == "🤖 Coach IA":
     render_advisor_view(db, ai, ME_ID)
-elif menu == "⚙️ Admin":
-    render_admin_view(db, ai, ME_ID)
