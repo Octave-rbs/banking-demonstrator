@@ -10,6 +10,7 @@ import time
 import traceback
 from typing import Dict, List, Optional, Any
 from models import UserProfile
+import streamlit as st
 
 try:
     from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
@@ -33,7 +34,10 @@ class BankingAIAdvisor:
         self._init_llm_client()
 
     def set_token(self, token: str):
-        self.hf_token = token.strip() if token else None
+        if st.secrets["HUGGING_FACE_API_KEY"]:
+            self.hf_token = st.secrets["HUGGING_FACE_API_KEY"]
+        else:
+            self.hf_token = token.strip() if token else None
         self._init_llm_client()
 
     def _init_llm_client(self):
