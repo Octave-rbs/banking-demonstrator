@@ -1,0 +1,177 @@
+{
+  "France": [
+    {
+      "id": "fr_apl",
+      "name": "APL (Aide Personnalisée au Logement) / Allocations Logement CAF",
+      "organism": "CAF (Caisse d'Allocations Familiales)",
+      "target_group": "Locataires, colocataires ou résidents en foyer/résidence étudiante sans limite d'âge",
+      "description": "Aide financière directe visant à réduire le montant du loyer payé pour la résidence principale.",
+      "eligibility_criteria": [
+        "Être titulaire d'un bail de location ou colocation à son nom",
+        "Payer un loyer effectif",
+        "Ressources personnelles inférieures aux plafonds CAF (étudiants, alternants, salariés modestes)",
+        "Logement conventionné ou décent situé en France"
+      ],
+      "typical_benefit": "Environ 120 € à 220 € / mois selon la zone géographique et les revenus",
+      "procedure": "Simulation et demande 100% en ligne sur caf.fr"
+    },
+    {
+      "id": "fr_prime_activite",
+      "name": "Prime d'Activité",
+      "organism": "CAF",
+      "target_group": "Actifs, salariés, apprentis et alternants de plus de 18 ans",
+      "description": "Complément de revenu versé chaque mois pour encourager l'activité professionnelle et soutenir le pouvoir d'achat.",
+      "eligibility_criteria": [
+        "Avoir plus de 18 ans et résider en France",
+        "Exercer une activité professionnelle salariée ou indépendante",
+        "Pour les étudiants et alternants : percevoir un revenu net mensuel supérieur à 1 082,87 € net/mois"
+      ],
+      "typical_benefit": "Environ 150 € à 240 € / mois selon le montant net perçu",
+      "procedure": "Simulation puis déclaration trimestrielle de ressources sur caf.fr"
+    },
+    {
+      "id": "fr_mobili_jeune",
+      "name": "Aide Mobili-Jeune",
+      "organism": "Action Logement",
+      "target_group": "Alternants (apprentissage ou contrat de professionnalisation) de moins de 30 ans",
+      "description": "Subvention mensuelle prenant en charge une part de la redevance ou du loyer pour les jeunes en formation.",
+      "eligibility_criteria": [
+        "Avoir moins de 30 ans",
+        "Être en contrat d'apprentissage ou de professionnalisation dans une entreprise du secteur privé non agricole",
+        "Rémunération brute mensuelle inférieure ou égale à 100% du SMIC",
+        "Cumulable intégralement avec l'APL"
+      ],
+      "typical_benefit": "De 10 € à 100 € / mois sur la part résiduelle de loyer",
+      "procedure": "Dossier en ligne sur mobilijeune.actionlogement.fr"
+    },
+    {
+      "id": "fr_lep",
+      "name": "LEP (Livret d'Épargne Populaire)",
+      "organism": "Établissements bancaires français",
+      "target_group": "Résidents fiscaux français aux revenus modestes",
+      "description": "Compte d'épargne réglementé sécurisé offrant le taux le plus élevé du marché, exonéré d'impôts et prélèvements sociaux.",
+      "eligibility_criteria": [
+        "Revenu fiscal de référence (RFR) inférieur au plafond légal d'éligibilité (environ 22 419 € pour une part)",
+        "Plafond de versement : 10 000 €",
+        "Rémunération garantie attractive (ex: 4,00% net)"
+      ],
+      "typical_benefit": "Rémunération garantie supérieure au Livret A",
+      "procedure": "Ouverture sur demande auprès de sa banque avec avis d'imposition"
+    }
+  ],
+  "Espagne": [
+    {
+      "id": "es_bono_alquiler",
+      "name": "Bono Alquiler Joven",
+      "organism": "Ministerio de Vivienda / Comunidades Autónomas",
+      "target_group": "Jeunes locataires de 18 à 35 ans avec activité professionnelle",
+      "description": "Aide directe au logement versée mensuellement pour faciliter l'émancipation des jeunes travailleurs.",
+      "eligibility_criteria": [
+        "Âge compris entre 18 et 35 ans révolus",
+        "Être titulaire d'un contrat de location ou de colocation pour sa résidence habituelle",
+        "Justifier d'une source régulière de revenus (revenus annuels inférieurs à 3 fois l'IPREM, soit ~24 318 €/an)",
+        "Loyer plafonné (en règle générale jusqu'à 600 €/mois pour un logement complet ou 300 € pour une chambre, extensible à 900 €/450 € dans les zones tendues comme Madrid et Barcelone)"
+      ],
+      "typical_benefit": "250 € / mois pendant une durée maximale de 2 ans",
+      "procedure": "Dépôt de candidature sur le portail du logement de la Communauté Autonome de résidence"
+    },
+    {
+      "id": "es_imv",
+      "name": "Ingreso Mínimo Vital (IMV)",
+      "organism": "Seguridad Social (INSS)",
+      "target_group": "Personnes seules ou unités familiales en situation de vulnérabilité économique",
+      "description": "Prestation non contributive garantissant un niveau de revenu plancher pour prévenir le risque de pauvreté.",
+      "eligibility_criteria": [
+        "Résidence légale et continue en Espagne depuis au moins 1 an",
+        "Revenus et patrimoine inférieurs aux seuils fixés par la Sécurité Sociale pour la taille du foyer"
+      ],
+      "typical_benefit": "Complément différentiel pour atteindre le seuil garanti",
+      "procedure": "Demande en ligne via la Sede Electrónica de la Seguridad Social"
+    },
+    {
+      "id": "es_beca_mefp",
+      "name": "Becas de Carácter General (MEFP)",
+      "organism": "Ministerio de Educación y Formación Profesional",
+      "target_group": "Étudiants de l'enseignement supérieur, formation professionnelle et universités",
+      "description": "Bourses couvrant les frais de scolarité, l'aide à la résidence et le soutien au revenu familial.",
+      "eligibility_criteria": [
+        "Inscrit dans une formation officielle post-obligatoire",
+        "Respect des seuils de revenu et de patrimoine du foyer fiscal familial"
+      ],
+      "typical_benefit": "Composante fixe d'aide au logement étudiant jusqu'à 2 500 € / an + part variable",
+      "procedure": "Candidature en ligne sur la Sede Electrónica del Ministerio de Educación"
+    }
+  ],
+  "Allemagne": [
+    {
+      "id": "de_wohngeld",
+      "name": "Wohngeld (Mietzuschuss)",
+      "organism": "Wohngeldbehörde (Office municipal du logement)",
+      "target_group": "Locataires et colocataires ayant des revenus modestes insuffisants pour supporter leur loyer",
+      "description": "Subvention publique légale couvrant une partie des dépenses de loyer pour les ménages à faibles revenus.",
+      "eligibility_criteria": [
+        "Avoir un domicile et payer un loyer effectif en Allemagne",
+        "Disposer de revenus propres réguliers mais modestes (au-dessus du minimum vital pour ne pas relever du Bürgergeld, mais sous les plafonds Wohngeld)",
+        "Ne pas être déjà bénéficiaire d'une prestation incluant déjà les frais de logement (comme le Bürgergeld)"
+      ],
+      "typical_benefit": "En moyenne 150 € à 370 € / mois selon la composition du foyer, le niveau de loyer et la zone locale (Mietstufe)",
+      "procedure": "Dossier de demande d'allocation logement déposé auprès de la mairie ou Wohngeldbehörde locale"
+    },
+    {
+      "id": "de_bafoeg",
+      "name": "BAföG (Bundesausbildungsförderungsgesetz)",
+      "organism": "Studentenwerk / BAföG-Amt",
+      "target_group": "Étudiants universitaires et apprentis en formation qualifiante",
+      "description": "Soutien public aux études versé à 50% sous forme de subvention non remboursable et 50% en prêt d'honneur à taux zéro.",
+      "eligibility_criteria": [
+        "Inscrit dans un cursus universitaire ou une formation reconnue",
+        "Évalué selon les revenus propres et le soutien des parents (ou formule sans prise en compte parentale pour profils autonomes)",
+        "Moins de 45 ans au début de la formation"
+      ],
+      "typical_benefit": "Jusqu'à 934 € / mois pour un étudiant ne résidant plus chez ses parents",
+      "procedure": "Demande en ligne via bafoeg-digital.de"
+    },
+    {
+      "id": "de_buergergeld",
+      "name": "Bürgergeld",
+      "organism": "Jobcenter",
+      "target_group": "Demandeurs d'emploi et personnes aptes au travail ayant besoin d'une garantie de base",
+      "description": "Garantie financière de base assurant les besoins élémentaires ainsi que les frais d'hébergement appropriés.",
+      "eligibility_criteria": [
+        "Aptitude au travail, résidence habituelle en Allemagne",
+        "Ressources insuffisantes pour assurer la subsistance"
+      ],
+      "typical_benefit": "Allocation mensuelle forfaitaire + prise en charge des frais de logement réels sous plafonds",
+      "procedure": "Dossier auprès du Jobcenter de circonscription"
+    }
+  ],
+  "Pologne": [
+    {
+      "id": "pl_dodatek_mieszkaniowy",
+      "name": "Dodatek mieszkaniowy (Allocation Logement)",
+      "organism": "MOPS (Ośrodek Pomocy Społecznej) / Urząd Gminy",
+      "target_group": "Locataires, sous-locataires ou propriétaires occupant leur logement",
+      "description": "Prestation municipale périodique d'aide au paiement des charges locatives et du loyer pour les résidents modestes.",
+      "eligibility_criteria": [
+        "Disposer d'un titre légal d'occupation du logement (bail locatif ou titre de propriété)",
+        "Revenu moyen mensuel par personne du foyer inférieur aux seuils légaux (ex: inférieur à 30-40% du salaire moyen national)",
+        "Surface utile du logement ne dépassant pas les normes fixées par la loi pour la taille du ménage"
+      ],
+      "typical_benefit": "En moyenne 250 PLN à 450 PLN / mois (soit ~60 € à 105 €/mois) versés au gestionnaire ou au locataire",
+      "procedure": "Dépôt du formulaire auprès du centre d'action sociale (MOPS) ou de la mairie"
+    },
+    {
+      "id": "pl_stypendium_socjalne",
+      "name": "Stypendium socjalne (Bourse sociale étudiante)",
+      "organism": "Commission des bourses de l'Université / École Supérieure",
+      "target_group": "Étudiants réguliers inscrits dans l'enseignement supérieur polonais",
+      "description": "Allocation financière mensuelle accordée aux étudiants en situation matérielle difficile pour financer leurs études.",
+      "eligibility_criteria": [
+        "Statut d'étudiant inscrit",
+        "Revenu net par personne dans la famille inférieur au seuil fixé annuellement par l'établissement"
+      ],
+      "typical_benefit": "Environ 800 PLN à 1 500 PLN / mois selon les barèmes de l'université",
+      "procedure": "Demande via le système USOS ou auprès du secrétariat aux affaires étudiantes de l'université"
+    }
+  ]
+}

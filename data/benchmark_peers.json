@@ -1,0 +1,74 @@
+{
+  "Logement & Charges": {
+    "top_10_economes": 450.0,
+    "top_30_economes": 580.0,
+    "moyenne": 750.0,
+    "top_30_depensiers": 850.0,
+    "top_10_depensiers": 980.0,
+    "benchmark_title": "Colocation / Studio IDF",
+    "unit": "€/mois",
+    "comment_eco": "Loyer et charges très bien maîtrisés en colocation.",
+    "comment_avg": "Loyer conforme au coût moyen étudiant en Île-de-France.",
+    "comment_high": "Part de loyer élevée par rapport aux étudiants parisiens."
+  },
+  "Alimentation": {
+    "top_10_economes": 160.0,
+    "top_30_economes": 220.0,
+    "moyenne": 280.0,
+    "top_30_depensiers": 350.0,
+    "top_10_depensiers": 450.0,
+    "benchmark_title": "Courses & Supermarché",
+    "unit": "€/mois",
+    "comment_eco": "Budget alimentaire très rigoureux (cuisine maison, hard-discount).",
+    "comment_avg": "Panier alimentaire conforme à la moyenne étudiante.",
+    "comment_high": "Dépenses alimentaires élevées (achats d'appoint fréquents)."
+  },
+  "Sorties & Loisirs": {
+    "top_10_economes": 50.0,
+    "top_30_economes": 100.0,
+    "moyenne": 160.0,
+    "top_30_depensiers": 230.0,
+    "top_10_depensiers": 320.0,
+    "benchmark_title": "Bars, Restos & Livraisons",
+    "unit": "€/mois",
+    "comment_eco": "Dépenses de loisirs très modérées.",
+    "comment_avg": "Niveau de sorties conforme à la moyenne étudiante.",
+    "comment_high": "Poste au-dessus de la majorité des pairs (commandes repas & shopping)."
+  },
+  "Transports": {
+    "top_10_economes": 20.0,
+    "top_30_economes": 35.0,
+    "moyenne": 42.0,
+    "top_30_depensiers": 65.0,
+    "top_10_depensiers": 95.0,
+    "benchmark_title": "Navigo & Mobilité",
+    "unit": "€/mois",
+    "comment_eco": "Usage exclusif des mobilités douces ou vélo.",
+    "comment_avg": "Navigo avec prise en charge employeur 50%.",
+    "comment_high": "Nombreux trajets VTC / taxis en complément des transports."
+  },
+  "Abonnements & Services": {
+    "top_10_economes": 15.0,
+    "top_30_economes": 25.0,
+    "moyenne": 35.0,
+    "top_30_depensiers": 55.0,
+    "top_10_depensiers": 80.0,
+    "benchmark_title": "Forfaits & Abonnements",
+    "unit": "€/mois",
+    "comment_eco": "Abonnements réduits au strict nécessaire.",
+    "comment_avg": "Forfait mobile et un service de streaming musical.",
+    "comment_high": "Cumul important d'abonnements numériques et audiovisuels."
+  },
+  "Autre": {
+    "top_10_economes": 20.0,
+    "top_30_economes": 40.0,
+    "moyenne": 60.0,
+    "top_30_depensiers": 90.0,
+    "top_10_depensiers": 140.0,
+    "benchmark_title": "Dépenses diverses & Imprévus",
+    "unit": "€/mois",
+    "comment_eco": "Imprévus quasi nuls.",
+    "comment_avg": "Dépenses diverses courantes sous contrôle.",
+    "comment_high": "Volume important de dépenses imprévues ou shopping."
+  }
+}
