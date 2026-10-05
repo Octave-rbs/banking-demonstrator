@@ -19,9 +19,22 @@ except ImportError:
     LANGCHAIN_AVAILABLE = False
 
 
+def _get_secret_hf_key() -> Optional[str]:
+    """Récupère la clé secrète sans lever d'exception si secrets.toml n'existe pas."""
+    try:
+        return st.secrets.get("HUGGING_FACE_API_KEY")
+    except Exception:
+        return None
+
+
 class BankingAIAdvisor:
     def __init__(self, hf_token: Optional[str] = None):
-        self.hf_token = hf_token or os.environ.get("HUGGINGFACEHUB_API_TOKEN") or os.environ.get("HF_TOKEN")
+        self.hf_token = (
+            hf_token
+            or _get_secret_hf_key()
+            or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+            or os.environ.get("HF_TOKEN")
+        )
         # Modèle validé
         self.default_model = "meta-llama/Llama-3.1-8B-Instruct"
         self.last_status: str = "idle"
@@ -33,11 +46,15 @@ class BankingAIAdvisor:
         self.aids_reference: Dict[str, List[Dict]] = self._load_public_aids_reference()
         self._init_llm_client()
 
-    def set_token(self, token: str):
-        if st.secrets["HUGGING_FACE_API_KEY"]:
-            self.hf_token = st.secrets["HUGGING_FACE_API_KEY"]
+    def set_token(self, token: Optional[str] = None):
+        if token and token.strip():
+            self.hf_token = token.strip()
         else:
-            self.hf_token = token.strip() if token else None
+            self.hf_token = (
+                _get_secret_hf_key()
+                or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
+                or os.environ.get("HF_TOKEN")
+            )
         self._init_llm_client()
 
     def _init_llm_client(self):

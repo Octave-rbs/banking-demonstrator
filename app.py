@@ -21,7 +21,12 @@ if 'db' not in st.session_state:
 
 # Initialisation du conseiller IA
 if 'ai_advisor' not in st.session_state:
-    st.session_state.ai_advisor = BankingAIAdvisor()
+    hf_key = None
+    try:
+        hf_key = st.secrets.get("HUGGING_FACE_API_KEY")
+    except Exception:
+        hf_key = None
+    st.session_state.ai_advisor = BankingAIAdvisor(hf_token=hf_key)
 
 # Suivi des fichiers de démo chargés automatiquement
 if 'loaded_files' not in st.session_state:
