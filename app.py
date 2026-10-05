@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from datetime import datetime
 from backend import BankBackend
+import pandas as pd
 from ai_advisor import BankingAIAdvisor
 from models import User, Transaction, SharedGroup, UserProfile
 
@@ -954,11 +955,12 @@ elif menu == "🤖 Coach IA":
     )
     st.markdown(scorecard_html, unsafe_allow_html=True)
 
-    # 4. Indicateur de statut du LLM & Configuration rapide
     if ai.is_hf_configured():
         st.caption(f"⚡ Inférence IA connectée : `{ai.default_model}` (Hugging Face API)")
     else:
         st.warning("⚠️ **Hugging Face API non connectée** : Renseignez votre token pour lancer le diagnostic IA approfondi en conditions réelles.")
+        if getattr(ai, "init_error", None):
+            st.error(f"🔍 **Détail technique :** {ai.init_error}")
         with st.expander("🔑 Configurer le token Hugging Face", expanded=True):
             quick_token = st.text_input("Votre token Hugging Face (`hf_...`) :", type="password", key="quick_hf_tok")
             if st.button("Connecter le LLM", key="btn_quick_tok"):

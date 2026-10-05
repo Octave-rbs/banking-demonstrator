@@ -20,11 +20,54 @@ except ImportError:
 
 
 def _get_secret_hf_key() -> Optional[str]:
-    """Récupère la clé secrète sans lever d'exception si secrets.toml n'existe pas."""
+    """
+    Récupère la clé secrète de façon tolérante depuis st.secrets ou os.environ,
+    supportant les différents formats et alias usuels (HUGGING_FACE_API_KEY, HF_TOKEN, etc.).
+    """
+    possible_keys = [
+        "HUGGING_FACE_API_KEY",
+        "HF_TOKEN",
+        "HUGGINGFACEHUB_API_TOKEN",
+        "HUGGINGFACE_API_KEY",
+        "HF_API_KEY",
+        "hugging_face_api_key",
+        "hf_token",
+        "huggingface_api_key",
+    ]
     try:
-        return st.secrets.get("HUGGING_FACE_API_KEY")
+        # 1. Vérification des clés directes dans st.secrets
+        for k in possible_keys:
+            if k in st.secrets:
+                val = st.secrets[k]
+                if val:
+                    return str(val).strip().strip('"').strip("'")
+
+        # 2. Vérification dans une éventuelle sous-section (ex: [huggingface] api_key = "...")
+        for section in ["huggingface", "hf", "hugging_face"]:
+            if section in st.secrets:
+                sec = st.secrets[section]
+                if isinstance(sec, dict):
+                    for subk in ["api_key", "token", "key", "HUGGING_FACE_API_KEY"]:
+                        if subk in sec and sec[subk]:
+                            return str(sec[subk]).strip().strip('"').strip("'")
+
+        # 3. Recherche dynamique dans st.secrets
+        for k in st.secrets.keys():
+            k_lower = k.lower()
+            if "hugging" in k_lower or "hf_" in k_lower:
+                val = st.secrets[k]
+                if isinstance(val, str) and val.strip():
+                    return val.strip().strip('"').strip("'")
     except Exception:
-        return None
+        pass
+
+    # 4. Fallback vers variables d'environnement
+    for env_k in ["HUGGING_FACE_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN"]:
+        val = os.environ.get(env_k)
+        if val:
+            return val.strip().strip('"').strip("'")
+
+    return None
 
 
 class BankingAIAdvisor:
@@ -60,13 +103,19 @@ class BankingAIAdvisor:
     def _init_llm_client(self):
         self.client = None
         self.init_error = None
-        if LANGCHAIN_AVAILABLE and self.hf_token:
+        if not LANGCHAIN_AVAILABLE:
+            self.init_error = "Bibliothèque 'langchain-huggingface' non installée dans l'environnement."
+            return
+
+        if self.hf_token:
             try:
                 os.environ["HF_TOKEN"] = self.hf_token
-                
+                os.environ["HUGGINGFACEHUB_API_TOKEN"] = self.hf_token
+
                 llm_backend = HuggingFaceEndpoint(
                     repo_id=self.default_model,
                     task="text-generation",
+                    huggingfacehub_api_token=self.hf_token,
                     max_new_tokens=950,
                     temperature=0.25,
                     timeout=120,
@@ -79,6 +128,10 @@ class BankingAIAdvisor:
                 self.client = None
 
     def is_hf_configured(self) -> bool:
+        if not self.hf_token:
+            detected = _get_secret_hf_key()
+            if detected:
+                self.set_token(detected)
         return bool(self.client and self.hf_token)
 
     def _load_public_aids_reference(self) -> Dict[str, List[Dict]]:
