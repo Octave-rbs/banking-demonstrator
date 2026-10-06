@@ -49,6 +49,13 @@ if 'executive_audit_text' not in st.session_state:
 if 'is_streaming_audit' not in st.session_state:
     st.session_state.is_streaming_audit = False
 
+if 'audit_action_cards' not in st.session_state:
+    st.session_state.audit_action_cards = []
+
+if 'audit_steps' not in st.session_state:
+    st.session_state.audit_steps = []
+
+
 db: BankBackend = st.session_state.db
 ai: BankingAIAdvisor = st.session_state.ai_advisor
 ME_ID = db.primary_user_id

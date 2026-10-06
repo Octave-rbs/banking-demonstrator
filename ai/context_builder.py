@@ -162,31 +162,37 @@ STRUCTURE ATTENDUE (utilise ces titres comme trame narrative fluide) :
 """
 
 
-def build_chat_system_prompt(
-    profile: UserProfile,
-    budget_summary: str,
-    country: str,
-    aids_guide: str
-) -> str:
-    """System prompt pour l'assistant conversationnel."""
+def build_compact_agent_prompt(profile: UserProfile, country: str = "France") -> str:
+    """Génère un prompt initial très compact pour le coach agentique."""
     family_sit = getattr(profile, "family_situation", "Célibataire")
     job = getattr(profile, "job_activity", profile.status)
     housing = getattr(profile, "housing_type", "Colocation")
     custom_notes = getattr(profile, "custom_notes", "").strip()
 
-    return f"""Tu es un coach financier expert et bienveillant.
-Profil client : {profile.name}, {profile.age} ans.
-Pays de résidence : {country}.
-Situation familiale : {family_sit}.
-Emploi / Formation : {job} ({profile.school_or_company}).
-Logement : {housing} à {profile.city} (Loyer : {profile.rent_amount:.0f} € / mois).
-Revenu net mensuel déclaré : {profile.monthly_net_income:.0f} € / mois.
-Objectifs / Précisions client : "{custom_notes or 'Aucune précision'}".
-Contexte bancaire récent : {budget_summary}.
+    return f"""Tu es un conseiller financier expert, empathique et pragmatique.
+Profil client : {profile.name}, {profile.age} ans | {country} | {profile.city}.
+Situation : {family_sit} | {job} ({profile.school_or_company}).
+Logement : {housing} (Loyer débité : {profile.rent_amount:.0f} € / mois).
+Revenu net déclaré : {profile.monthly_net_income:.0f} € / mois.
+Objectifs client : "{custom_notes or 'Aucun projet spécifique déclaré'}".
 
-{aids_guide}
+Tu disposes d'outils d'audit pour explorer les dépenses et les aides en temps réel."""
 
-Règles de conseil :
-- Adapte rigoureusement toutes tes réponses, démarches et conseils aux dispositifs applicables en {country}.
-- Réponds à la question de l'utilisateur de façon précise, personnalisée, chiffrée et encourageante.
-- Appuies toi sur les informations spécifiques du client pour lui répondre de façon personnalisée."""
+
+def build_chat_system_prompt(
+    profile: UserProfile,
+    budget_summary: str = "",
+    country: str = "France",
+    aids_guide: str = ""
+) -> str:
+    """System prompt compact pour l'assistant conversationnel."""
+    base = build_compact_agent_prompt(profile, country)
+    if budget_summary:
+        base += f"\nContexte bancaire immédiat : {budget_summary}"
+    base += (
+        "\n\nConsignes :"
+        "\n- Réponds de manière percutante, personnalisée et chiffrée."
+        "\n- Si tu identifies une opportunité d'aide ou d'épargne, termine ta réponse par des recommandations concrètes."
+    )
+    return base
+
