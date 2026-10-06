@@ -87,45 +87,7 @@ def render_advisor_view(db: BankBackend, ai: BankingAIAdvisor, me_id: str):
             st.toast("Profil et contexte IA enregistrés avec succès !")
             st.rerun()
 
-    # 3. Scorecard de Santé Budgétaire Instantanée (< 5ms)
-    health = db.calculate_health_score(me_id)
-    p_tre = health["pillars"]["treasury"]
-    p_str = health["pillars"]["structure"]
-    p_pee = health["pillars"]["peers"]
-
-    c_tre = "#2E8B57" if p_tre["status"] == "safe" else ("#D97706" if p_tre["status"] == "warning" else "#DC2626")
-    c_str = "#2E8B57" if p_str["status"] == "safe" else ("#D97706" if p_str["status"] == "warning" else "#DC2626")
-    c_pee = "#2E8B57" if p_pee["status"] == "safe" else ("#D97706" if p_pee["status"] == "warning" else "#DC2626")
-
-    scorecard_html = (
-        f'<div class="scorecard-card">'
-        f'<div class="scorecard-header">'
-        f'<div><div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.8px; font-weight:700; color:#64748B;">Score Budgétaire</div>'
-        f'<div style="font-size:1.05rem; font-weight:800; color:#1A432A;">Diagnostic Instantané</div></div>'
-        f'<div style="text-align:right;"><span style="font-size:2.1rem; font-weight:900; color:{health["color"]};">{health["total_score"]}</span>'
-        f'<span style="font-size:0.95rem; font-weight:700; color:#94A3B8;">/100</span>'
-        f'<div style="font-size:0.72rem; font-weight:700; color:{health["color"]};">{health["badge"]}</div></div>'
-        f'</div>'
-        f'<div class="scorecard-summary" style="border-left:3px solid {health["color"]};">💡 {health["summary"]}</div>'
-        f'<div class="pillar-row">'
-        f'<div class="pillar-header"><span style="color:#334155;">💰 {p_tre["title"]}</span><span style="color:#64748B;">{p_tre["score"]} / {p_tre["max_score"]} pts</span></div>'
-        f'<div class="pillar-bar-bg"><div style="background:{c_tre}; width:{p_tre["ratio"]*100}%; height:100%; border-radius:6px;"></div></div>'
-        f'<div class="pillar-verdict">{p_tre["verdict"]}</div>'
-        f'</div>'
-        f'<div class="pillar-row">'
-        f'<div class="pillar-header"><span style="color:#334155;">⚖️ {p_str["title"]}</span><span style="color:#64748B;">{p_str["score"]} / {p_str["max_score"]} pts</span></div>'
-        f'<div class="pillar-bar-bg"><div style="background:{c_str}; width:{p_str["ratio"]*100}%; height:100%; border-radius:6px;"></div></div>'
-        f'<div class="pillar-verdict">{p_str["verdict"]}</div>'
-        f'</div>'
-        f'<div class="pillar-row" style="margin-bottom:0;">'
-        f'<div class="pillar-header"><span style="color:#334155;">👥 {p_pee["title"]}</span><span style="color:#64748B;">{p_pee["score"]} / {p_pee["max_score"]} pts</span></div>'
-        f'<div class="pillar-bar-bg"><div style="background:{c_pee}; width:{p_pee["ratio"]*100}%; height:100%; border-radius:6px;"></div></div>'
-        f'<div class="pillar-verdict">{p_pee["verdict"]}</div>'
-        f'</div>'
-        f'</div>'
-    )
-    st.markdown(scorecard_html, unsafe_allow_html=True)
-
+    # 3. Moteur IA & Statut d'inférence
     if ai.is_hf_configured():
         st.caption(f"⚡ Inférence IA connectée : `{ai.default_model}` (Hugging Face API)")
     else:

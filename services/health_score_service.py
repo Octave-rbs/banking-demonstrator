@@ -100,21 +100,31 @@ def calculate_health_score(
         p3_status = "danger"
 
     total_score = min(100, max(0, p1_score + p2_score + p3_score))
-    if total_score >= 80:
-        overall_status = "Excellente santé"
-        color = "#2E8B57"
-        badge = "🟢 Excellente santé"
-        summary = "Vos finances sont saines et pérennes avec une bonne capacité d'épargne."
-    elif total_score >= 60:
+    if total_score >= 85:
+        overall_status = "Gestion solide avec épargne"
+        color = "#1B5E20"
+        badge = "🟢 Gestion solide avec épargne"
+        summary = "Excellente maîtrise budgétaire avec une capacité d'épargne régulière et pérenne."
+    elif total_score >= 75:
         overall_status = "Situation équilibrée"
+        color = "#2E8B57"
+        badge = "🟢 Situation équilibrée"
+        summary = "Trésorerie saine et dépenses sous contrôle avec un bon équilibre mensuel."
+    elif total_score >= 60:
+        overall_status = "Équilibre sous vigilance"
         color = "#D97706"
-        badge = "🟡 Situation équilibrée"
-        summary = "Trésorerie globalement stable avec des marges d'optimisation identifiées."
+        badge = "🟡 Équilibre sous vigilance"
+        summary = "Attention marge de manœuvre réduite face aux dépenses imprévues."
+    elif total_score >= 40:
+        overall_status = "Situation à risque"
+        color = "#E67E22"
+        badge = "🟠 Situation à risque"
+        summary = "Dépenses excessives : surveiller les postes variables prioritaires."
     else:
-        overall_status = "Vigilance requise"
+        overall_status = "Dépenses sous tension"
         color = "#DC2626"
-        badge = "🔴 Vigilance requise"
-        summary = "Budget sous tension : des arbitrages rapides sont recommandés."
+        badge = "🔴 Dépenses sous tension"
+        summary = "Trésorerie sous forte tension nécessitant des arbitrages rapides."
 
     return {
         "total_score": total_score,

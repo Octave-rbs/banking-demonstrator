@@ -82,6 +82,9 @@ def analyze_monthly_budget(
     calendar_projection = calendar_fixed + (daily_rate * calendar_total_days)
     calendar_label = max_date.strftime("%B %Y").capitalize()
 
+    calendar_days_remaining = max(1, calendar_total_days - calendar_days_passed)
+    calendar_daily_allowance = max(0.0, calendar_remaining / calendar_days_remaining)
+
     # Diagnostic d'équilibre
     is_over_budget = (
         (rolling_total_spent > rolling_income) or
@@ -105,6 +108,8 @@ def analyze_monthly_budget(
         "calendar_projection": calendar_projection,
         "calendar_days_passed": calendar_days_passed,
         "calendar_total_days": calendar_total_days,
+        "calendar_days_remaining": calendar_days_remaining,
+        "calendar_daily_allowance": calendar_daily_allowance,
         "calendar_label": calendar_label,
         "current_month_label": calendar_label,
         "total_spent": rolling_total_spent,
