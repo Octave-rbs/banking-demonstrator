@@ -468,27 +468,22 @@ def build_report_kpis(audit_summary: Dict[str, Any]) -> Dict[str, Any]:
     missing = audit_summary.get("missing_emergency", 0.0)
 
     if audit_summary.get("has_3m_savings"):
-        cushion_value, cushion_hint = "Complet", "3 mois de dépenses de côté"
+        cushion_value, cushion_hint = "Complet", "plus de 3 mois de dépenses de côté"
     else:
         cushion_value, cushion_hint = "En pause", f"il manque {fmt_eur(missing)}"
         for label, monthly in audit_summary.get("scenarios", []):
             if monthly > 0 and math.ceil(missing / monthly) <= 60:
                 cushion_value = f"{math.ceil(missing / monthly)} mois"
-                if "aides" in label:
-                    cushion_hint = "avec économies et aides accordées"
-                elif "réduction" in label:
-                    cushion_hint = "avec la réduction de dépenses"
-                else:
-                    cushion_hint = "au rythme actuel"
+                cushion_hint = "pour le constituer en suivant les recommandations"
                 break
 
     sign = "+" if margin >= 0 else "−"
     tiles = [
-        {"label": "Bilan du mois", "value": f"{sign}{fmt_eur(abs(margin))}",
-         "hint": "excédent" if margin >= 0 else "les dépenses dépassent les revenus",
+        {"label": "Balance sur le mois glissant", "value": f"{sign}{fmt_eur(abs(margin))}",
+         "hint": "excédent" if margin >= 0 else "dépenses supérieures aux revenus",
          "tone": "positive" if margin >= 0 else "negative"},
         {"label": "Épargne disponible", "value": fmt_eur(audit_summary.get("available_savings", 0.0)),
-         "hint": "au-delà des dépenses du mois", "tone": "neutral"},
+         "hint": "prédite à la fin du mois", "tone": "neutral"},
         {"label": "Coussin de sécurité", "value": cushion_value, "hint": cushion_hint,
          "tone": "positive" if audit_summary.get("has_3m_savings") else "neutral"},
     ]
