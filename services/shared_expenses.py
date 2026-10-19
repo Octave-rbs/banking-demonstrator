@@ -14,6 +14,26 @@ def get_shared_transactions(transactions: List[Transaction], group_id: str) -> L
     return [tx for tx in transactions if tx.shared_account_id == group_id]
 
 
+def split_equally(amount: float, participant_ids: List[str], payer_id: Optional[str] = None) -> Dict[str, float]:
+    """
+    Répartit un montant en parts égales au centime près.
+    Les centimes restants sont absorbés par le payeur s'il participe, sinon par le premier participant.
+    """
+    if not participant_ids:
+        return {}
+    total_cents = int(round(amount * 100))
+    base_cents, remainder = divmod(total_cents, len(participant_ids))
+    shares = {uid: base_cents for uid in participant_ids}
+    absorber = payer_id if payer_id in shares else participant_ids[0]
+    shares[absorber] += remainder
+    return {uid: cents / 100 for uid, cents in shares.items()}
+
+
+def is_split_balanced(amount: float, split_details: Dict[str, float]) -> bool:
+    """Vrai si la somme des parts correspond au montant total (à 0,005 € près)."""
+    return abs(amount - sum(split_details.values())) <= 0.005
+
+
 def add_direct_expense(
     transactions: List[Transaction],
     merchant: str,

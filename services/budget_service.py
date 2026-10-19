@@ -2,9 +2,9 @@
 Moteur d'analyse budgétaire (mois glissant 30 jours et mois calendaire en cours).
 """
 
-from datetime import timedelta
 from typing import Dict, List
 from models import Transaction, UserProfile
+from services.periods import personal_transactions, rolling_window_bounds
 
 
 def analyze_monthly_budget(
@@ -17,7 +17,7 @@ def analyze_monthly_budget(
     - Mois glissant (30 jours) : base d'analyse de fond pour le chatbot et comparaison aux pairs.
     - Mois en cours (ex: du 1er au 11) : indicateur des dépenses actuelles et reste à vivre de fin de mois.
     """
-    user_txs = [tx for tx in transactions if tx.user_id == user_id and not tx.is_settlement]
+    user_txs = personal_transactions(transactions, user_id)
     baseline_income = profile.monthly_net_income
     fixed_categories = ["Logement & Charges", "Abonnements & Services"]
 
@@ -49,10 +49,8 @@ def analyze_monthly_budget(
             "is_over_budget": False
         }
 
-    max_date = max(tx.date for tx in user_txs)
-
     # 1. Mois glissant sur 30 jours
-    rolling_start = max_date - timedelta(days=30)
+    rolling_start, max_date = rolling_window_bounds(user_txs, 30)
     rolling_txs = [tx for tx in user_txs if rolling_start <= tx.date <= max_date]
 
     rolling_income_detected = sum(abs(tx.amount) for tx in rolling_txs if tx.category == "Revenus & Aides")

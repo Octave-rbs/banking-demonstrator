@@ -1,6 +1,6 @@
 # Démonstrateur Bancaire Intelligent & Partagé
 
-Application bancaire mobile innovante développée avec **Streamlit**, **LangChain** et **Hugging Face**.
+Application bancaire mobile innovante développée avec **Streamlit**, **LangChain** et **Groq**.
 
 ## 🌟 Fonctionnalités Clés
 

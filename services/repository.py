@@ -6,9 +6,23 @@ import os
 import json
 import uuid
 import pandas as pd
+from pathlib import Path
+from datetime import date, timedelta
 from typing import Dict, List, Optional, Any
 from models import User, UserProfile, SharedGroup, Transaction
 from services.categorizer import categorize_transaction
+from services.shared_expenses import split_equally
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+# Dernier jour couvert par les CSV de démonstration (data/operations_60j_*.csv).
+# Au chargement, les dates sont décalées pour que ce jour corresponde à aujourd'hui.
+DEMO_DATA_END_DATE = date(2026, 9, 11)
+
+
+def demo_date_offset(today: Optional[date] = None) -> timedelta:
+    """Décalage à appliquer aux CSV de démo pour qu'ils se terminent aujourd'hui."""
+    return (today or date.today()) - DEMO_DATA_END_DATE
 
 
 class BankRepository:
@@ -135,8 +149,17 @@ class BankRepository:
         if group_id in self.groups:
             self.active_group_id = group_id
 
-    def process_transaction_file(self, file_obj, user_id: str, file_type: str) -> int:
-        """Ingère et catégorise un CSV ou Excel de relevé bancaire."""
+    def process_transaction_file(
+        self,
+        file_obj,
+        user_id: str,
+        file_type: str,
+        date_offset: timedelta = timedelta(0)
+    ) -> int:
+        """Ingère et catégorise un CSV ou Excel de relevé bancaire.
+
+        date_offset décale toutes les dates (utilisé pour recaler les CSV de démo sur aujourd'hui).
+        """
         if file_type == "csv":
             try:
                 df = pd.read_csv(file_obj, encoding="utf-8")
@@ -147,7 +170,7 @@ class BankRepository:
         else:
             df = pd.read_excel(file_obj)
 
-        df['date'] = pd.to_datetime(df['date'])
+        df['date'] = pd.to_datetime(df['date']) + date_offset
         if 'shared_account_id' in df.columns:
             df['shared_account_id'] = (
                 df['shared_account_id']
@@ -161,7 +184,14 @@ class BankRepository:
         for _, row in df.iterrows():
             amt = float(row['amount'])
             merchant = str(row['merchant'])
-            cat, subcat = categorize_transaction(merchant, amt)
+            # Catégories fournies par le fichier (CSV de démo) ; sinon règles de secours
+            if pd.notnull(row.get('category')) and pd.notnull(row.get('subcategory')):
+                cat, subcat = str(row['category']), str(row['subcategory'])
+            else:
+                cat, subcat = categorize_transaction(merchant, amt)
+            group = self.groups.get(row['shared_account_id']) if row['shared_account_id'] else None
+            # Parts figées à l'import : un membre ajouté plus tard ne participe pas à cette dépense
+            split_details = split_equally(amt, list(group.members), user_id) if group else {}
 
             tx = Transaction(
                 id=str(uuid.uuid4())[:8],
@@ -171,6 +201,7 @@ class BankRepository:
                 method=str(row.get('method', 'carte')),
                 date=row['date'].to_pydatetime(),
                 shared_account_id=row['shared_account_id'],
+                split_details=split_details,
                 category=cat,
                 subcategory=subcat
             )
@@ -181,7 +212,7 @@ class BankRepository:
 
     def load_public_aids(self, country: Optional[str] = None) -> Any:
         """Charge le catalogue neutre des aides publiques."""
-        json_path = os.path.join("data", "public_aids_reference.json")
+        json_path = DATA_DIR / "public_aids_reference.json"
         if not os.path.exists(json_path):
             return []
         try:

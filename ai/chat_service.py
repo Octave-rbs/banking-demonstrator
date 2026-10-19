@@ -5,11 +5,11 @@ et de proposer des cartes d'actions contextuelles en 1 clic.
 """
 
 import json
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Any, Tuple
 from models import UserProfile
 from services import BankBackend
 from ai.hf_client import HFClient
-from ai.tools import AUDIT_TOOLS_SPECS, execute_tool
+from ai.tools import AUDIT_TOOLS_SPECS, execute_tool, OFFICIAL_AID_URLS
 from ai.context_builder import build_chat_system_prompt
 from ai.agent_runner import extract_tool_call, extract_action_cards
 
@@ -29,8 +29,8 @@ def ask_advisor_agentic(
     """
     if not hf_client.is_configured():
         return (
-            "⚠️ **Assistant IA non connecté** : Aucun token Hugging Face n'est actuellement configuré. "
-            "Veuillez renseigner un token Hugging Face valide pour dialoguer avec votre coach.",
+            "⚠️ **Assistant IA non connecté** : Aucune clé API Groq n'est actuellement configurée. "
+            "Veuillez renseigner une clé API Groq valide pour dialoguer avec votre coach.",
             [],
             []
         )
@@ -60,11 +60,11 @@ Sinon, réponds directement. Si ta réponse suggère une démarche ou une action
     "icon": "🏛️",
     "title": "Titre",
     "description": "Courte description",
-    "url": "https://...",
     "button_label": "Bouton"
   }}
 ]
 ```
+Pour une carte "external_link", "id" doit être l'un de : {", ".join(OFFICIAL_AID_URLS)}. Le lien officiel est ajouté automatiquement, n'écris jamais d'URL.
 """
 
     messages = [
@@ -98,31 +98,3 @@ Sinon, réponds directement. Si ta réponse suggère une démarche ou une action
 
     cleaned_text, action_cards = extract_action_cards(res_text)
     return cleaned_text, action_cards, steps_log
-
-
-def ask_advisor(
-    hf_client: HFClient,
-    question: str,
-    profile: UserProfile,
-    budget_summary: str = "",
-    aids_reference: Optional[Dict] = None,
-    db: Optional[BankBackend] = None,
-    user_id: Optional[str] = None
-) -> str:
-    """Façade de compatibilité directe pour les anciens appels."""
-    if db and user_id:
-        text, _, _ = ask_advisor_agentic(hf_client, question, profile, db, user_id, budget_summary)
-        return text
-    
-    # Mode sans backend (fallback standard)
-    if not hf_client.is_configured():
-        return "⚠️ Assistant IA non connecté : Token manquant."
-    country = getattr(profile, "country", "France")
-    system_prompt = build_chat_system_prompt(profile, budget_summary, country)
-    try:
-        messages = [("system", system_prompt), ("user", question)]
-        response = hf_client.client.invoke(messages)
-        content = getattr(response, "content", response)
-        return "\n".join(str(i) for i in content) if isinstance(content, list) else str(content)
-    except Exception as e:
-        return f"⚠️ Erreur LLM : {str(e)}"

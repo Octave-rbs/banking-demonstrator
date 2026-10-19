@@ -1,0 +1,2 @@
+# Fins de ligne normalisées en LF dans le dépôt (évite les diffs CRLF sous Windows)
+* text=auto eol=lf

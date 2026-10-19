@@ -2,6 +2,7 @@
 Vue Accueil : Solde du compte personnel et historique des opérations.
 """
 
+from html import escape
 import streamlit as st
 from services import BankBackend
 from views.dialogs import share_existing_tx_dialog
@@ -27,10 +28,10 @@ def render_home_view(db: BankBackend, me_id: str):
     # Filtre de recherche
     filter_text = st.text_input("Rechercher un commerçant ou une dépense...", label_visibility="collapsed", placeholder="🔍 Rechercher...")
 
-    filtered_txs = reversed(my_txs)
+    filtered_txs = sorted(my_txs, key=lambda t: t.date, reverse=True)
     if filter_text.strip():
         q = filter_text.lower()
-        filtered_txs = [t for t in my_txs if q in t.merchant.lower() or q in t.category.lower()]
+        filtered_txs = [t for t in filtered_txs if q in t.merchant.lower() or q in t.category.lower()]
 
     for tx in list(filtered_txs)[:15]:
         is_shared = tx.shared_account_id is not None
@@ -38,16 +39,16 @@ def render_home_view(db: BankBackend, me_id: str):
 
         amt_color = "#28A745" if tx.amount < 0 else "#222"
         amt_prefix = "+" if tx.amount < 0 else "-"
-        shared_badge_html = f"<span style='color:#2E8B57; font-size:0.75rem; font-weight:700;'>✓ Partagé ({group_name})</span>" if is_shared else ""
+        shared_badge_html = f"<span style='color:#2E8B57; font-size:0.75rem; font-weight:700;'>✓ Partagé ({escape(group_name)})</span>" if is_shared else ""
 
         tx_html = (
             f'<div class="tx-item">'
             f'<div style="display:flex; justify-content:space-between; align-items:flex-start;">'
-            f'<div><span class="tx-merchant">{tx.merchant}</span> <span class="tx-cat-badge">{tx.category}</span></div>'
+            f'<div><span class="tx-merchant">{escape(tx.merchant)}</span> <span class="tx-cat-badge">{escape(tx.category)}</span></div>'
             f'<div class="tx-amt" style="color: {amt_color};">{amt_prefix}{abs(tx.amount):.2f} €</div>'
             f'</div>'
             f'<div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">'
-            f'<span class="tx-meta">{tx.date.strftime("%d/%m/%Y")} • {tx.method.capitalize()}</span>'
+            f'<span class="tx-meta">{tx.date.strftime("%d/%m/%Y")} • {escape(tx.method.capitalize())}</span>'
             f'{shared_badge_html}'
             f'</div>'
             f'</div>'

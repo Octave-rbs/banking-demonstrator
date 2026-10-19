@@ -4,14 +4,15 @@ Gestion des données de benchmark statistique des pairs et ventilation des dépe
 
 import os
 import json
-from datetime import timedelta
 from typing import Dict, List, Optional, Tuple
 from models import Transaction
+from services.repository import DATA_DIR
+from services.periods import personal_transactions, rolling_window_bounds
 
 
 def load_peers_benchmark(filepath: Optional[str] = None) -> Dict[str, Dict]:
     """Charge les benchmarks statistiques des pairs depuis le fichier JSON externe."""
-    json_path = filepath or os.path.join("data", "benchmark_peers.json")
+    json_path = filepath or DATA_DIR / "benchmark_peers.json"
 
     if os.path.exists(json_path):
         try:
@@ -35,12 +36,11 @@ def get_category_breakdown(
     Calcule la ventilation des dépenses par catégorie et sous-catégorie sur les 30 derniers jours,
     et fournit la comparaison statistique avec les pairs (uniquement pour les catégories réelles).
     """
-    user_txs = [tx for tx in transactions if tx.user_id == user_id and not tx.is_settlement]
+    user_txs = personal_transactions(transactions, user_id)
     if not user_txs:
         return {}, {}, {}
 
-    max_date = max(tx.date for tx in user_txs)
-    start_date = max_date - timedelta(days=window_days)
+    start_date, max_date = rolling_window_bounds(user_txs, window_days)
 
     recent_txs = [
         tx for tx in user_txs
@@ -56,7 +56,7 @@ def get_category_breakdown(
         categories[cat] = categories.get(cat, 0.0) + tx.amount
         if cat not in subcategories:
             subcategories[cat] = {}
-        subcategories[cat][subcat] = subcategories.get(subcat, 0.0) + tx.amount
+        subcategories[cat][subcat] = subcategories[cat].get(subcat, 0.0) + tx.amount
 
     peers_result: Dict[str, Dict] = {}
 

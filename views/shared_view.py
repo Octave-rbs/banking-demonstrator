@@ -2,6 +2,7 @@
 Vue Partagé : Compte partagé multi-groupes, calcul des balances et virements instantanés.
 """
 
+from html import escape
 import streamlit as st
 from services import BankBackend
 from models import User
@@ -70,7 +71,7 @@ def render_shared_view(db: BankBackend, me_id: str):
                 if tx.is_settlement:
                     st.markdown(f"""
                         <div class="settle-badge">
-                            <b>{tx.merchant}</b><br>
+                            <b>{escape(tx.merchant)}</b><br>
                             <span style="color:#555; font-size:0.75rem;">{tx.date.strftime('%d/%m/%Y')} • Remboursement instantané validé</span>
                         </div>
                     """, unsafe_allow_html=True)
@@ -78,11 +79,11 @@ def render_shared_view(db: BankBackend, me_id: str):
                     st.markdown(f"""
                         <div class="tx-item">
                             <div style="display:flex; justify-content:space-between;">
-                                <span class="tx-merchant">{tx.merchant}</span>
+                                <span class="tx-merchant">{escape(tx.merchant)}</span>
                                 <span class="tx-amt">{tx.amount:.2f} €</span>
                             </div>
                             <div class="tx-meta" style="margin-top:4px;">
-                                Payé par <b>{payer_label}</b> le {tx.date.strftime('%d/%m/%Y')}
+                                Payé par <b>{escape(payer_label)}</b> le {tx.date.strftime('%d/%m/%Y')}
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
@@ -100,7 +101,7 @@ def render_shared_view(db: BankBackend, me_id: str):
                     <div style="background:white; border-radius:14px; padding:12px; margin-bottom:8px; border-left: 4px solid #F39C12; box-shadow:0 1px 4px rgba(0,0,0,0.04);">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <div>
-                                <span style="font-weight:700; font-size:0.9rem;">{d_name}</span> ➔ <span style="font-weight:700; font-size:0.9rem;">{c_name}</span>
+                                <span style="font-weight:700; font-size:0.9rem;">{escape(d_name)}</span> ➔ <span style="font-weight:700; font-size:0.9rem;">{escape(c_name)}</span>
                                 <div style="font-size:0.75rem; color:#777;">Dette nette calculée</div>
                             </div>
                             <div style="font-size:1.1rem; font-weight:800; color:#1A432A;">
@@ -131,7 +132,7 @@ def render_shared_view(db: BankBackend, me_id: str):
 
             st.markdown(f"""
                 <div style="display:flex; justify-content:space-between; align-items:center; background:white; padding:10px 14px; border-radius:12px; margin-bottom:6px;">
-                    <div>{u.avatar} <b>{u.name}</b> {'(Moi)' if uid == me_id else ''}</div>
+                    <div>{u.avatar} <b>{escape(u.name)}</b> {'(Moi)' if uid == me_id else ''}</div>
                     <div style="font-weight:700; color:{bal_col};">{bal_str}</div>
                 </div>
             """, unsafe_allow_html=True)

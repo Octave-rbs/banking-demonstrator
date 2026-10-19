@@ -3,9 +3,10 @@ Outils d'audit financier pour l'agent IA.
 Permet au LLM d'interroger dynamiquement la base de données bancaire et les benchmarks.
 """
 
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 from services import BankBackend
+from services.periods import personal_transactions, rolling_window_bounds
+from services.investment_service import simulate_investment
 
 
 # URLs officielles des portails d'aides publiques
@@ -36,11 +37,14 @@ def get_budget_overview(db: BankBackend, user_id: str, window_days: int = 30) ->
     
     spent_30d = float(budget.get("rolling_spent", 0.0))
     balance = float(getattr(db, "account_balance", 0.0))
+    # Le solde du compte courant contient l'argent des dépenses du mois :
+    # seule la part au-delà d'un mois de dépenses compte comme épargne de précaution.
+    available_savings = max(0.0, round(balance - spent_30d, 2))
     target_3m = round(spent_30d * 3, 2)
-    months_saved = round(balance / spent_30d, 1) if spent_30d > 0 else 3.0
-    has_3m_savings = balance >= target_3m
-    idle_cash = max(0.0, round(balance - spent_30d, 2))
-    missing_emergency = max(0.0, round(target_3m - balance, 2))
+    months_saved = round(available_savings / spent_30d, 1) if spent_30d > 0 else 3.0
+    has_3m_savings = available_savings >= target_3m
+    idle_cash = available_savings
+    missing_emergency = max(0.0, round(target_3m - available_savings, 2))
 
     return {
         "statut_budget": budget.get("status", "safe"),
@@ -54,6 +58,7 @@ def get_budget_overview(db: BankBackend, user_id: str, window_days: int = 30) ->
         "projection_fin_de_mois": round(budget.get("calendar_projection", 0.0), 2),
         "periode": budget.get("rolling_label", f"{window_days} derniers jours"),
         "solde_bancaire_disponible": round(balance, 2),
+        "epargne_disponible_hors_mois_en_cours": available_savings,
         "coussin_securite_cible_3_mois": target_3m,
         "mois_epargne_securite_actuels": months_saved,
         "a_3_mois_epargne_precaution": has_3m_savings,
@@ -76,12 +81,11 @@ def get_largest_expenses(
     expense_type: 'all' (toutes dépenses), 'variable' (dépenses courantes hors loyer/abonnements), ou 'fixed'.
     category: filtrer optionnellement par nom de catégorie.
     """
-    user_txs = [tx for tx in db.transactions if tx.user_id == user_id and not tx.is_settlement]
+    user_txs = personal_transactions(db.transactions, user_id)
     if not user_txs:
         return {"expenses": [], "count": 0}
 
-    max_date = max(tx.date for tx in user_txs)
-    start_date = max_date - timedelta(days=window_days)
+    start_date, max_date = rolling_window_bounds(user_txs, window_days)
 
     fixed_categories = ["Logement & Charges", "Abonnements & Services"]
     
@@ -183,12 +187,11 @@ def get_category_transactions(
     Inspecte en détail les transactions et sous-catégories d'une catégorie spécifique
     (ex: 'Alimentation & Restauration', 'Loisirs & Sorties', 'Shopping & Mode').
     """
-    user_txs = [tx for tx in db.transactions if tx.user_id == user_id and not tx.is_settlement]
+    user_txs = personal_transactions(db.transactions, user_id)
     if not user_txs:
         return {"category": category_name, "transactions": [], "total_spent": 0.0}
 
-    max_date = max(tx.date for tx in user_txs)
-    start_date = max_date - timedelta(days=window_days)
+    start_date, max_date = rolling_window_bounds(user_txs, window_days)
 
     matched = [
         tx for tx in user_txs
@@ -230,7 +233,7 @@ def detect_recurring_subscriptions(db: BankBackend, user_id: str) -> Dict[str, A
     Détecte les abonnements récurrents et prélèvements fixes réguliers
     (streaming, salle de sport, télécom, énergie, assurances).
     """
-    user_txs = [tx for tx in db.transactions if tx.user_id == user_id and not tx.is_settlement]
+    user_txs = personal_transactions(db.transactions, user_id)
     
     subscriptions = []
     total_cost = 0.0
@@ -306,30 +309,15 @@ def simulate_stock_investment(
     """
     Simule un plan d'investissement en Bourse (PEA vs CTO) avec calcul d'intérêts composés et fiscalité.
     """
-    total_months = int(years * 12)
-    r = float(annual_yield)
-    monthly_rate = (1 + r) ** (1 / 12) - 1 if r > 0 else 0.0
-
-    invested = float(initial_deposit) + (float(monthly_deposit) * total_months)
-    fv_initial = float(initial_deposit) * ((1 + r) ** years)
-    if monthly_rate > 0:
-        fv_monthly = float(monthly_deposit) * (((1 + monthly_rate) ** total_months - 1) / monthly_rate)
-    else:
-        fv_monthly = float(monthly_deposit) * total_months
-    total_capital = fv_initial + fv_monthly
-    capital_gain = max(0.0, total_capital - invested)
-
     is_pea = "pea" in str(account_type).lower()
-    tax_rate = 0.172 if is_pea else 0.30
-    tax = capital_gain * tax_rate
-    net_gain = capital_gain - tax
+    sim = simulate_investment(initial_deposit, monthly_deposit, years, annual_yield, is_pea)
 
     return {
         "support": "PEA (Plan d'Épargne en Actions)" if is_pea else "CTO (Compte-Titres Ordinaire)",
-        "capital_investi_euros": round(invested, 2),
-        "capital_final_estime_euros": round(total_capital, 2),
-        "plus_value_brute_euros": round(capital_gain, 2),
-        "plus_value_nette_euros": round(net_gain, 2),
+        "capital_investi_euros": round(sim["invested"], 2),
+        "capital_final_estime_euros": round(sim["final_capital"], 2),
+        "plus_value_brute_euros": round(sim["capital_gain"], 2),
+        "plus_value_nette_euros": round(sim["net_gain"], 2),
         "horizon_annees": years,
         "fiscalite": "17,2% prélèvements sociaux (exonéré d'impôt sur le revenu après 5 ans)" if is_pea else "Flat Tax de 30% (CTO)"
     }

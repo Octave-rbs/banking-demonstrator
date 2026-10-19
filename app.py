@@ -3,9 +3,10 @@ Démonstrateur Bancaire Intelligent & Partagé.
 Point d'entrée principal de l'application Streamlit.
 """
 
-import os
+from pathlib import Path
 import streamlit as st
 from services import BankBackend
+from services.repository import DATA_DIR, demo_date_offset
 from ai import BankingAIAdvisor
 from views import (
     render_home_view,
@@ -29,7 +30,7 @@ if 'db' not in st.session_state:
 if 'ai_advisor' not in st.session_state:
     hf_key = None
     try:
-        hf_key = st.secrets.get("HUGGING_FACE_API_KEY")
+        hf_key = st.secrets.get("GROQ_API_KEY")
     except Exception:
         hf_key = None
     st.session_state.ai_advisor = BankingAIAdvisor(hf_token=hf_key)
@@ -39,9 +40,6 @@ if 'loaded_files' not in st.session_state:
 
 if 'chat_messages' not in st.session_state:
     st.session_state.chat_messages = []
-
-if 'last_audit' not in st.session_state:
-    st.session_state.last_audit = None
 
 if 'executive_audit_text' not in st.session_state:
     st.session_state.executive_audit_text = None
@@ -61,25 +59,23 @@ ai: BankingAIAdvisor = st.session_state.ai_advisor
 ME_ID = db.primary_user_id
 
 # 3. Chargement automatique des fichiers CSV de démonstration
-DATA_DIR = "data"
-if os.path.exists(DATA_DIR):
-    csv_candidates = [
-        ("operations_60j_paul.csv", "u1"),
-        ("operations_60j_emma.csv", "u2")
-    ]
-    for filename, uid in csv_candidates:
-        filepath = os.path.join(DATA_DIR, filename)
-        if os.path.exists(filepath) and filename not in st.session_state.loaded_files:
-            try:
-                with open(filepath, "rb") as f:
-                    db.process_transaction_file(f, uid, "csv")
-                st.session_state.loaded_files.add(filename)
-            except Exception:
-                pass
+csv_candidates = [
+    ("operations_60j_paul.csv", "u1"),
+    ("operations_60j_emma.csv", "u2")
+]
+for filename, uid in csv_candidates:
+    filepath = DATA_DIR / filename
+    if filepath.exists() and filename not in st.session_state.loaded_files:
+        try:
+            with open(filepath, "rb") as f:
+                db.process_transaction_file(f, uid, "csv", date_offset=demo_date_offset())
+            st.session_state.loaded_files.add(filename)
+        except Exception as e:
+            st.warning(f"Impossible de charger {filename} : {e}")
 
 # 4. Injection des styles CSS externes
-CSS_FILE = os.path.join("assets", "styles.css")
-if os.path.exists(CSS_FILE):
+CSS_FILE = Path(__file__).resolve().parent / "assets" / "styles.css"
+if CSS_FILE.exists():
     with open(CSS_FILE, "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 

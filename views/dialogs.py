@@ -2,8 +2,11 @@
 Modales interactives Streamlit pour les dépenses partagées.
 """
 
+from html import escape
 import streamlit as st
 from services import BankBackend
+from services.shared_expenses import split_equally, is_split_balanced
+from services.investment_service import simulate_investment, LEP_ANNUAL_RATE
 
 
 @st.dialog("Partager une dépense existante")
@@ -13,7 +16,7 @@ def share_existing_tx_dialog(db: BankBackend, tx_id: str):
         st.error("Opération introuvable.")
         return
 
-    st.markdown(f"<h3 style='text-align:center; color:#1A432A; margin-bottom:2px;'>{tx.merchant}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:center; color:#1A432A; margin-bottom:2px;'>{escape(tx.merchant)}</h3>", unsafe_allow_html=True)
     st.markdown(f"<p style='text-align:center; font-size:1.6rem; font-weight:800; margin-top:0;'>{tx.amount:.2f} €</p>", unsafe_allow_html=True)
 
     group_options = {gid: g.name for gid, g in db.groups.items()}
@@ -39,21 +42,21 @@ def share_existing_tx_dialog(db: BankBackend, tx_id: str):
             format_func=lambda uid: member_users[uid].name
         )
         if selected_members:
-            share_val = round(tx.amount / len(selected_members), 2)
-            st.info(f"💡 Chaque participant paiera **{share_val:.2f} €** ({len(selected_members)} personnes).")
-            split_details = {uid: share_val for uid in selected_members}
+            split_details = split_equally(tx.amount, selected_members, tx.user_id)
+            share_val = min(split_details.values())
+            st.info(f"💡 Chaque participant paiera **{share_val:.2f} €** ({len(selected_members)} personnes, centimes restants au payeur).")
         else:
             st.warning("Veuillez sélectionner au moins un participant.")
     else:
         st.write("Saisissez la part exacte de chacun :")
         allocated = 0.0
         for uid, u in member_users.items():
-            amt = st.number_input(f"Part de {u.name} (€)", min_value=0.0, max_value=float(tx.amount), step=1.0, key=f"split_edit_{uid}")
+            amt = st.number_input(f"Part de {u.name} (€)", min_value=0.0, max_value=float(tx.amount), step=1.0, key=f"split_edit_{tx.id}_{uid}")
             if amt > 0:
                 split_details[uid] = amt
             allocated += amt
         diff = round(tx.amount - allocated, 2)
-        if abs(diff) > 0.01:
+        if abs(diff) > 0.005:
             st.warning(f"Reste à répartir : **{diff:.2f} €**")
         else:
             st.success("✅ La somme correspond exactement au total !")
@@ -63,6 +66,8 @@ def share_existing_tx_dialog(db: BankBackend, tx_id: str):
         if st.button("Valider le partage", type="primary", use_container_width=True):
             if not split_details:
                 st.error("Répartition invalide.")
+            elif not is_split_balanced(tx.amount, split_details):
+                st.error("La somme des parts doit être égale au montant total.")
             else:
                 db.share_transaction(tx.id, split_details, selected_gid)
                 st.toast("Dépense ajoutée au compte partagé !")
@@ -81,7 +86,7 @@ def add_new_group_expense_dialog(db: BankBackend, group_id: str, me_id: str):
         st.error("Groupe introuvable.")
         return
 
-    st.markdown(f"<h3 style='text-align:center; color:#1A432A;'>{group.icon} {group.name}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:center; color:#1A432A;'>{escape(group.icon)} {escape(group.name)}</h3>", unsafe_allow_html=True)
 
     merchant = st.text_input("Titre de la dépense (ex: Courses Lidl, Billets train)", placeholder="Ex: Courses colocation")
     amount = st.number_input("Montant total (€)", min_value=0.01, step=1.0, value=25.0)
@@ -98,9 +103,9 @@ def add_new_group_expense_dialog(db: BankBackend, group_id: str, me_id: str):
     split_details = {}
 
     if mode == "Parts égales entre tous":
-        share_val = round(amount / len(group.members), 2)
-        st.info(f"💡 Part par personne : **{share_val:.2f} €** ({len(group.members)} membres)")
-        split_details = {uid: share_val for uid in group.members}
+        split_details = split_equally(amount, list(group.members), payer_id)
+        share_val = min(split_details.values())
+        st.info(f"💡 Part par personne : **{share_val:.2f} €** ({len(group.members)} membres, centimes restants au payeur)")
     elif mode == "Sélection de membres":
         selected = st.multiselect(
             "Qui participe ?",
@@ -109,9 +114,9 @@ def add_new_group_expense_dialog(db: BankBackend, group_id: str, me_id: str):
             format_func=lambda uid: member_users[uid].name
         )
         if selected:
-            share_val = round(amount / len(selected), 2)
-            st.info(f"💡 Part par personne : **{share_val:.2f} €** ({len(selected)} sélectionnés)")
-            split_details = {uid: share_val for uid in selected}
+            split_details = split_equally(amount, selected, payer_id)
+            share_val = min(split_details.values())
+            st.info(f"💡 Part par personne : **{share_val:.2f} €** ({len(selected)} sélectionnés, centimes restants au payeur)")
     else:
         allocated = 0.0
         for uid, u in member_users.items():
@@ -120,7 +125,7 @@ def add_new_group_expense_dialog(db: BankBackend, group_id: str, me_id: str):
                 split_details[uid] = amt
             allocated += amt
         diff = round(amount - allocated, 2)
-        if abs(diff) > 0.01:
+        if abs(diff) > 0.005:
             st.warning(f"Reste à répartir : **{diff:.2f} €**")
         else:
             st.success("✅ Total parfaitement équilibré !")
@@ -130,6 +135,8 @@ def add_new_group_expense_dialog(db: BankBackend, group_id: str, me_id: str):
             st.error("Veuillez indiquer un titre.")
         elif not split_details:
             st.error("Veuillez définir au moins un participant.")
+        elif not is_split_balanced(amount, split_details):
+            st.error("La somme des parts doit être égale au montant total.")
         else:
             db.add_direct_expense(
                 merchant=merchant,
@@ -174,10 +181,11 @@ def open_savings_account_dialog(db: BankBackend, me_id: str):
     st.markdown("<h3 style='text-align:center; color:#1A432A; margin-bottom:2px;'>📈 Livret d'Épargne Populaire (LEP)</h3>", unsafe_allow_html=True)
     st.caption("Le livret réglementé le plus rémunérateur du marché, sans aucun risque de perte en capital.")
 
-    st.markdown("""
+    lep_rate_label = f"{LEP_ANNUAL_RATE * 100:.2f}".replace(".", ",")
+    st.markdown(f"""
         <div style="background:#E8F5E9; border-left:4px solid #2E8B57; padding:10px 14px; border-radius:8px; margin-bottom:12px; font-size:0.85rem;">
             <b>✨ Caractéristiques réglementées :</b><br>
-            • Taux net garanti : <b>4,00 % / an</b> (exonéré d'impôts et prélèvements sociaux)<br>
+            • Taux net garanti : <b>{lep_rate_label} % / an</b> (exonéré d'impôts et prélèvements sociaux)<br>
             • Plafond de dépôt : <b>10 000 €</b><br>
             • Éligibilité : Réservé aux revenus modestes (Revenu fiscal &lt; 22 419 €).
         </div>
@@ -187,7 +195,7 @@ def open_savings_account_dialog(db: BankBackend, me_id: str):
     monthly_add = st.slider("Épargne programmée chaque mois (€) :", min_value=0, max_value=500, value=50, step=10)
 
     # Calcul des gains estimés sur 1 an
-    rate = 0.04
+    rate = LEP_ANNUAL_RATE
     estimated_total_placed = deposit_init + (monthly_add * 12)
     # Intérêts approximatifs selon la règle des quinzaines
     interest_1y = (deposit_init * rate) + (monthly_add * 6 * rate)
@@ -201,7 +209,6 @@ def open_savings_account_dialog(db: BankBackend, me_id: str):
     """, unsafe_allow_html=True)
 
     if st.button("🚀 Valider la demande d'ouverture en ligne", type="primary", use_container_width=True):
-        st.session_state.lep_opened = True
         st.success(f"Félicitations {profile.name} ! Votre dossier de LEP a été pré-validé. Un versement de {deposit_init:.0f} € et une épargne automatique de {monthly_add:.0f} €/mois ont été enregistrés.")
 
 
@@ -247,25 +254,9 @@ def open_stock_investment_dialog(db: BankBackend, me_id: str):
         monthly_dca = st.slider("Versement mensuel programmé (DCA) (€) :", min_value=0, max_value=500, value=50, step=10)
         annual_yield = st.slider("Hypothèse de rendement annuel moyen (%) :", min_value=3.0, max_value=12.0, value=7.0, step=0.5, help="Rendement historique moyen annualisé des marchés mondiaux diversifiés (ex: MSCI World).")
 
-    # Calcul des intérêts composés
-    r = annual_yield / 100.0
-    total_months = years * 12
-    monthly_rate = (1 + r) ** (1 / 12) - 1
-
-    capital_invested = initial_invest + (monthly_dca * total_months)
-    # Formule valeur future avec versements réguliers
-    fv_initial = initial_invest * ((1 + r) ** years)
-    if monthly_rate > 0:
-        fv_monthly = monthly_dca * (((1 + monthly_rate) ** total_months - 1) / monthly_rate)
-    else:
-        fv_monthly = monthly_dca * total_months
-    final_capital = fv_initial + fv_monthly
-    capital_gain = max(0.0, final_capital - capital_invested)
-
     is_pea = "PEA" in account_choice
-    tax_rate = 0.172 if is_pea else 0.30
-    tax_amount = capital_gain * tax_rate
-    net_gain = capital_gain - tax_amount
+    sim = simulate_investment(initial_invest, monthly_dca, years, annual_yield / 100.0, is_pea)
+    capital_invested, final_capital, net_gain = sim["invested"], sim["final_capital"], sim["net_gain"]
 
     st.markdown(f"""
         <div style="background:#F4FBF7; border:1px solid #C8E6C9; border-radius:10px; padding:12px; margin:12px 0; text-align:center;">
@@ -290,7 +281,6 @@ def open_stock_investment_dialog(db: BankBackend, me_id: str):
     """, unsafe_allow_html=True)
 
     if st.button("🚀 Valider la demande d'ouverture de compte d'investissement", type="primary", use_container_width=True):
-        st.session_state.stock_account_opened = account_choice
         chosen_type = "PEA" if is_pea else "CTO"
         st.success(f"Bravo {profile.name} ! Votre demande d'ouverture de {chosen_type} a été prise en compte avec un dépôt initial de {initial_invest:.0f} € et {monthly_dca:.0f} €/mois programmés.")
 
@@ -303,7 +293,7 @@ def set_budget_ceiling_dialog(db: BankBackend, me_id: str, category_name: str = 
 
     st.markdown(f"""
         <div style="background:#FFF9C4; border-left:4px solid #FBC02D; padding:10px; border-radius:8px; margin-bottom:12px; font-size:0.85rem;">
-            Poste ciblé : <b>{category_name}</b><br>
+            Poste ciblé : <b>{escape(category_name)}</b><br>
             Dépenses constatées sur 30 jours : <b>{current_spent:.2f} €</b>
         </div>
     """, unsafe_allow_html=True)

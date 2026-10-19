@@ -1,5 +1,8 @@
 """
-Module de configuration et gestion du client Hugging Face / LangChain.
+Module de configuration et gestion du client LLM (Groq via LangChain).
+
+Le nom du module et de la classe (HFClient) est conservé pour ne pas casser
+les imports existants ; le backend est désormais l'API gratuite de Groq.
 """
 
 import os
@@ -7,75 +10,66 @@ from typing import Optional
 import streamlit as st
 
 try:
-    from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+    from langchain_groq import ChatGroq
     LANGCHAIN_AVAILABLE = True
 except ImportError:
     LANGCHAIN_AVAILABLE = False
 
 
+# Les modèles Llama ont été retirés par Groq le 16/08/2026 (remplaçant officiel : gpt-oss-120b)
+DEFAULT_GROQ_MODEL = "openai/gpt-oss-120b"
+
+
+def _clean(val) -> str:
+    return str(val).strip().strip('"').strip("'")
+
+
 def get_secret_hf_key() -> Optional[str]:
     """
-    Récupère le token Hugging Face depuis st.secrets ou os.environ.
+    Récupère la clé API Groq depuis st.secrets ou os.environ.
     Tolère les variantes de nommage courantes.
     """
-    possible_keys = [
-        "HUGGING_FACE_API_KEY",
-        "HF_TOKEN",
-        "HUGGINGFACEHUB_API_TOKEN",
-        "HUGGINGFACE_API_KEY",
-        "HF_API_KEY",
-        "hugging_face_api_key",
-        "hf_token",
-        "huggingface_api_key",
-    ]
+    possible_keys = ["GROQ_API_KEY", "groq_api_key", "GROQ_KEY"]
     try:
         # 1. Clés directes dans st.secrets
         for k in possible_keys:
-            if k in st.secrets:
-                val = st.secrets[k]
-                if val:
-                    return str(val).strip().strip('"').strip("'")
+            if k in st.secrets and st.secrets[k]:
+                return _clean(st.secrets[k])
 
-        # 2. Sous-sections
-        for section in ["huggingface", "hf", "hugging_face"]:
-            if section in st.secrets:
-                sec = st.secrets[section]
-                if isinstance(sec, dict):
-                    for subk in ["api_key", "token", "key", "HUGGING_FACE_API_KEY"]:
-                        if subk in sec and sec[subk]:
-                            return str(sec[subk]).strip().strip('"').strip("'")
-
-        # 3. Recherche dynamique
-        for k in st.secrets.keys():
-            k_lower = k.lower()
-            if "hugging" in k_lower or "hf_" in k_lower:
-                val = st.secrets[k]
-                if isinstance(val, str) and val.strip():
-                    return val.strip().strip('"').strip("'")
+        # 2. Sous-section [groq]
+        if "groq" in st.secrets:
+            sec = st.secrets["groq"]
+            for subk in ["api_key", "token", "key", "GROQ_API_KEY"]:
+                if subk in sec and sec[subk]:
+                    return _clean(sec[subk])
     except Exception:
         pass
 
-    # 4. Variables d'environnement
-    for env_k in ["HUGGING_FACE_API_KEY", "HF_TOKEN", "HUGGINGFACEHUB_API_TOKEN"]:
-        val = os.environ.get(env_k)
-        if val:
-            return val.strip().strip('"').strip("'")
+    # 3. Variables d'environnement
+    val = os.environ.get("GROQ_API_KEY")
+    if val:
+        return _clean(val)
 
     return None
 
 
+def get_model_name() -> str:
+    """Modèle Groq, surchargeable via GROQ_MODEL (secrets ou environnement)."""
+    try:
+        if "GROQ_MODEL" in st.secrets and st.secrets["GROQ_MODEL"]:
+            return _clean(st.secrets["GROQ_MODEL"])
+    except Exception:
+        pass
+    return os.environ.get("GROQ_MODEL") or DEFAULT_GROQ_MODEL
+
+
 class HFClient:
-    """Gère l'initialisation du modèle LLM et la session Hugging Face."""
+    """Gère l'initialisation du modèle LLM (Groq) et la session associée."""
 
     def __init__(self, token: Optional[str] = None):
-        self.default_model: str = "meta-llama/Llama-3.1-8B-Instruct"
-        self.hf_token: Optional[str] = (
-            token
-            or get_secret_hf_key()
-            or os.environ.get("HUGGINGFACEHUB_API_TOKEN")
-            or os.environ.get("HF_TOKEN")
-        )
-        self.client: Optional[ChatHuggingFace] = None
+        self.default_model: str = get_model_name()
+        self.hf_token: Optional[str] = token or get_secret_hf_key()
+        self.client: Optional[ChatGroq] = None
         self.init_error: Optional[str] = None
         self.last_status: str = "idle"
         self.last_error: Optional[str] = None
@@ -89,31 +83,32 @@ class HFClient:
         if token and token.strip():
             self.hf_token = token.strip()
         else:
-            self.hf_token = get_secret_hf_key() or os.environ.get("HF_TOKEN")
+            self.hf_token = get_secret_hf_key()
         self.init_llm()
 
     def init_llm(self):
         self.client = None
         self.init_error = None
         if not LANGCHAIN_AVAILABLE:
-            self.init_error = "Bibliothèque 'langchain-huggingface' non installée."
+            self.init_error = "Bibliothèque 'langchain-groq' non installée (pip install langchain-groq)."
             return
 
         if self.hf_token:
             try:
-                os.environ["HF_TOKEN"] = self.hf_token
-                os.environ["HUGGINGFACEHUB_API_TOKEN"] = self.hf_token
-
-                llm_backend = HuggingFaceEndpoint(
-                    repo_id=self.default_model,
-                    task="text-generation",
-                    huggingfacehub_api_token=self.hf_token,
-                    max_new_tokens=950,
+                extra = {}
+                if self.default_model.startswith("openai/gpt-oss"):
+                    # Modèle à raisonnement : le raisonnement consomme aussi des tokens de sortie,
+                    # on le limite et on laisse de la marge pour la réponse finale.
+                    extra["reasoning_effort"] = "low"
+                self.client = ChatGroq(
+                    model=self.default_model,
+                    api_key=self.hf_token,
+                    max_tokens=2000,
                     temperature=0.25,
                     timeout=120,
-                    streaming=True
+                    max_retries=2,
+                    **extra,
                 )
-                self.client = ChatHuggingFace(llm=llm_backend)
             except Exception as e:
                 self.init_error = f"{type(e).__name__}: {str(e)}"
                 self.client = None
